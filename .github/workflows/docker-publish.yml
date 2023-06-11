@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - 'master'
+    tags:
+      - "v*.*.*"
+
 env:
   IMAGE_NAME: ${{ github.repository }}
 
@@ -13,6 +16,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{ env.IMAGE_NAME }}
+          tags: type=match,pattern=v(.*),group=1
         
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
@@ -32,9 +42,12 @@ jobs:
           context: build
           platforms: linux/arm64/v8,linux/amd64
           push: true
-          tags: ${{ env.IMAGE_NAME }}:latest
+          tags: |
+            ${{ steps.meta.outputs.tags }}
+            ${{ env.IMAGE_NAME }}:latest
           
       - name: Update repo description
+        if: false
         uses: peter-evans/dockerhub-description@v2
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
